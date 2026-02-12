@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Zephyr | Premium Ledger</title>
+  <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Bodoni+Moda:ital,opsz,wght@0,6..96,400;0,6..96,700;1,6..96,400&family=Inter:wght@200;400;500&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-deep: #050505;        /* Pitch Black Background */
+      --container-bg: #111111;  /* Gunmetal Gray Container */
+      --panel-inner: #161616;   /* Slightly lighter for contrast */
+      --accent: #ffffff;
+      --text-bright: #ffffff;
+      --text-soft: #a0a0a0;
+      --text-dim: #444444;
+      --border-thin: rgba(255, 255, 255, 0.1);
+    }
+
+    body {
+      background-color: var(--bg-deep);
+      color: var(--text-bright);
+      font-family: 'Inter', sans-serif;
+      margin: 0;
+      height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      /* Subtle radial glow to give depth to the black background */
+      background-image: radial-gradient(circle at center, #0f0f0f 0%, #050505 100%);
+    }
+
+    .container {
+      width: 90%;
+      max-width: 1050px;
+      height: 75vh;
+      display: grid;
+      grid-template-columns: 380px 1fr;
+      background: var(--container-bg);
+      border: 1px solid var(--border-thin);
+      box-shadow: 0 50px 100px rgba(0, 0, 0, 0.8);
+      position: relative;
+      overflow: hidden;
+    }
+
+    /* Left Side: Interaction */
+    .panel-left {
+      padding: 60px 45px;
+      background: var(--panel-inner);
+      border-right: 1px solid var(--border-thin);
+      display: flex;
+      flex-direction: column;
+    }
+
+    header { margin-bottom: 60px; }
+
+    header h1 {
+      font-family: 'Bodoni Moda', serif;
+      font-size: 3rem;
+      font-weight: 400;
+      margin: 0;
+      letter-spacing: -2px;
+    }
+
+    .tagline {
+      font-size: 0.6rem;
+      text-transform: uppercase;
+      letter-spacing: 5px;
+      color: var(--text-dim);
+      margin-top: 5px;
+    }
+
+    .field { margin-bottom: 45px; }
+
+    label {
+      font-size: 0.55rem;
+      text-transform: uppercase;
+      letter-spacing: 3px;
+      color: var(--text-soft);
+      margin-bottom: 12px;
+      display: block;
+    }
+
+    input {
+      width: 100%;
+      background: transparent;
+      border: none;
+      border-bottom: 1px solid var(--border-thin);
+      padding: 10px 0;
+      color: var(--text-bright);
+      font-family: 'Bodoni Moda', serif;
+      font-size: 1.6rem;
+      outline: none;
+      transition: border-color 0.4s ease;
+    }
+
+    input:focus { border-bottom-color: var(--accent); }
+
+    button {
+      background: var(--accent);
+      color: var(--bg-deep);
+      border: none;
+      padding: 20px;
+      font-size: 0.7rem;
+      font-weight: 500;
+      text-transform: uppercase;
+      letter-spacing: 4px;
+      cursor: pointer;
+      margin-top: auto;
+      transition: opacity 0.3s;
+    }
+
+    button:hover { opacity: 0.85; }
+
+    /* Right Side: Ledger */
+    .panel-right {
+      padding: 60px;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    .log-title {
+      font-family: 'Bodoni Moda', serif;
+      font-size: 1.2rem;
+      font-style: italic;
+      color: var(--text-soft);
+      margin-bottom: 40px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    #log {
+      flex-grow: 1;
+      overflow-y: auto;
+      padding-right: 20px;
+    }
+
+    .entry {
+      padding: 30px 0;
+      border-bottom: 1px solid var(--border-thin);
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-end;
+      animation: reveal 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    @keyframes reveal {
+      from { opacity: 0; transform: translateY(15px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .entry-uid {
+      font-size: 0.65rem;
+      color: var(--text-soft);
+      letter-spacing: 1px;
+      display: block;
+      margin-bottom: 5px;
+    }
+
+    .entry-val {
+      font-family: 'Bodoni Moda', serif;
+      font-size: 2.2rem;
+      line-height: 1;
+    }
+
+    .entry-status {
+      font-size: 0.5rem;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+      color: var(--text-dim);
+      margin-top: 8px;
+    }
+
+    .dismiss {
+      font-size: 0.5rem;
+      text-transform: uppercase;
+      letter-spacing: 1.5px;
+      color: var(--text-dim);
+      cursor: pointer;
+      transition: color 0.3s;
+    }
+
+    .dismiss:hover { color: #ff5e5e; }
+
+    /* Custom thin scrollbar */
+    #log::-webkit-scrollbar { width: 2px; }
+    #log::-webkit-scrollbar-thumb { background: var(--text-dim); }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    <div class="panel-left">
+      <header>
+        <h1>Zephyr</h1>
+        <div class="tagline">Financial Integrity</div>
+      </header>
+
+      <div class="field">
+        <label>Active Identity</label>
+        <input id="uid" placeholder="Waiting..." readonly>
+      </div>
+
+      <div class="field">
+        <label>Transaction Amount (RWF)</label>
+        <input id="amount" type="number" placeholder="00.00">
+      </div>
+
+      <button onclick="sendTopup()">Authorize Action</button>
+    </div>
+
+    <div class="panel-right">
+      <div class="log-title">
+        <span>Ledger Archive</span>
+        <span style="font-size: 0.6rem; letter-spacing: 4px; font-style: normal;">ENCRYPTED</span>
+      </div>
+      <div id="log">
+        </div>
+    </div>
+  </div>
+
+  <script>
+    const socket = io();
+    const logDiv = document.getElementById('log');
+
+    socket.on('card_update', data => {
+      const entryId = 'e-' + Math.random().toString(36).substr(2, 5);
+      const entry = document.createElement('div');
+      entry.className = 'entry';
+      entry.id = entryId;
+      
+      let title = data.balance !== undefined ? "Account Balance" : "Successful Top-up";
+      let val = data.balance !== undefined ? data.balance : data.new_balance;
+
+      entry.innerHTML = `
+        <div>
+          <span class="entry-uid">${data.uid}</span>
+          <div class="entry-val">${val.toLocaleString()} <span style="font-size: 0.9rem; font-style: italic; opacity: 0.4;">rwf</span></div>
+          <div class="entry-status">${title}</div>
+        </div>
+        <div class="dismiss" onclick="removeEntry('${entryId}')">Dismiss</div>
+      `;
+      
+      logDiv.prepend(entry);
+      if (data.balance !== undefined) document.getElementById('uid').value = data.uid;
+    });
+
+    function removeEntry(id) {
+        const el = document.getElementById(id);
+        el.style.opacity = '0';
+        el.style.transform = 'translateX(10px)';
+        setTimeout(() => el.remove(), 400);
+    }
+
+    function sendTopup() {
+      const uid = document.getElementById('uid').value;
+      const amt = document.getElementById('amount').value;
+      if(!uid || !amt) return;
+
+      fetch('/topup', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ uid, amount: parseInt(amt) })
+      }).then(() => {
+          document.getElementById('amount').value = '';
+      });
+    }
+  </script>
+</body>
+</html>
