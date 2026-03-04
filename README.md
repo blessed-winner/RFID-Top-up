@@ -225,7 +225,7 @@ The web dashboard (`index.html`) provides:
 - Backend should be deployed on a stable server/machine for production use
 
 ## Deployment URL
-  http://157.173.101.159:9224/rfid.html
+  http://157.173.101.159:8224
 
 ## License
 
